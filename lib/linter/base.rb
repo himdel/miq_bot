@@ -16,15 +16,14 @@ module Linter
         logger.info("#{log_header} Collected files #{Dir.glob(File.join(@work_dir, "**/*")).inspect}")
 
         logger.info("#{log_header} Executing linter...")
-        require 'awesome_spawn'
-        result = AwesomeSpawn.run(linter_executable, :params => options, :chdir => @work_dir)
+        result = run_linter
       end
 
       # rubocop exits 1 both when there are errors and when there are style issues.
       #   Instead of relying on just exit_status, we check if there is anything on stderr.
       raise result.error if result.exit_status != 0 && result.error.present?
       begin
-        offenses = JSON.parse(result.output.chomp)
+        offenses = parse_output(result.output)
       rescue JSON::ParserError => error
         logger.error("#{log_header} #{error.message}")
         logger.error("#{log_header} Failed to parse JSON result #{result.output.inspect}")
@@ -34,6 +33,15 @@ module Linter
     end
 
     private
+
+    def run_linter
+      require 'awesome_spawn'
+      AwesomeSpawn.run(linter_executable, :params => options, :chdir => @work_dir)
+    end
+
+    def parse_output(str)
+      JSON.parse(str.chomp)
+    end
 
     def collect_files
       branch_service = branch.git_service
