@@ -8,6 +8,8 @@ module Linter
     end
 
     def run
+      return [] unless config_file_found?
+
       logger.info("#{log_header} Starting run...")
       require 'tempfile'
       result = Dir.mktmpdir do |dir|
@@ -41,6 +43,10 @@ module Linter
 
     def parse_output(str)
       JSON.parse(str.chomp)
+    end
+
+    def config_file_found?
+      config_files.any? { |f| File.exist? f }
     end
 
     def collect_files
